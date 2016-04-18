@@ -4,7 +4,7 @@ var CODE_MIRROR_OP_SOURCE = 'CodeMirror';
  * @constructor
  * @param {CodeMirror} codeMirror - a CodeMirror editor instance
  * @param {Object} options - required. Options object with the following keys:
- *    - onOp(op, source): required. a function to call when a ShareDB op is
+ *    - onOp(op, source): required. a function to call when a text OT op is
  *      produced by the editor. Note the second argument, `source`, which **must**
  *      be passed through to the ShareDB doc.
  *    - onStart(): optional. will be called when ShareDBCodeMirror starts listening
@@ -28,25 +28,25 @@ function ShareDBCodeMirror(codeMirror, options) {
 module.exports = ShareDBCodeMirror;
 
 /**
- * Convenience for attching a ShareDB doc to a CodeMirror instance. You can
- * also construct a ShareDBCodeMirror instance directly if you'd like to wire
- * things up explicitly and have an abstraction layer between the two.
+ * Attaches a ShareDB doc to a CodeMirror instance. You can also construct a
+ * ShareDBCodeMirror instance directly if you'd like to wire things up
+ * explicitly and have an abstraction layer between the two.
  *
  * @param {sharedb.Doc} shareDoc
  * @param {CodeMirror} codeMirror
- * @param {Object=} options - optional options Object to pass on to the
- *    ShareDBCodeMirror instance. `onOp` will be ignored.
+ * @param {Object} options - configuration options:
+ *    - key: string; required. The key in the ShareDB doc at which to
+ *      store the CodeMirror value. Deeply nested paths are currently not
+ *      supported.
+ *    - verbose: optional. If provided and true, debug messages will be printed
+ *      to the console.
  * @param {function(Object)=} callback - optional. will be called when everything
  *    is hooked up. The first argument will be the error that occurred, if any.
  * @return {ShareDBCodeMirror} the created ShareDBCodeMirror object
  */
 ShareDBCodeMirror.attachDocToCodeMirror = function(shareDoc, codeMirror, options, callback) {
-  if (typeof options === 'function') {
-    callback = options;
-    options = undefined;
-  }
-
-  var verbose = options && options.verbose;
+  var key = options.key;
+  var verbose = Boolean(options.verbose);
 
   var shareDBCodeMirror = new ShareDBCodeMirror(codeMirror, {
     verbose: verbose,
@@ -57,12 +57,30 @@ ShareDBCodeMirror.attachDocToCodeMirror = function(shareDoc, codeMirror, options
       shareDoc.removeListener('op', shareDBOpListener);
     },
     onOp: function(op, source) {
-      shareDoc.submitOp(op, source);
+      var docOp = [{p: [key], t: 'text', o: op}];
+
+      if (verbose) {
+        console.log('ShareDBCodeMirror: submitting op to doc:', docOp);
+      }
+
+      shareDoc.submitOp(docOp, source);
+      shareDBCodeMirror.assertValue(shareDoc.data[key]);
     }
   });
 
   function shareDBOpListener(op, source) {
-    shareDBCodeMirror.applyOp(op, source);
+    for (var i = 0; i < op.length; i++) {
+      var opPart = op[i];
+
+      if (opPart.p && opPart.p.length === 1 && opPart.p[0] === key && opPart.t === 'text') {
+        shareDBCodeMirror.applyOp(opPart.o, source);
+
+      } else if (verbose) {
+        console.log('ShareDBCodeMirror: ignoring op because of path or type:', opPart);
+      }
+    }
+
+    shareDBCodeMirror.assertValue(shareDoc.data[key]);
   }
 
   shareDoc.subscribe(function(err) {
@@ -79,17 +97,16 @@ ShareDBCodeMirror.attachDocToCodeMirror = function(shareDoc, codeMirror, options
       if (verbose) {
         console.log('ShareDBCodeMirror: creating as text');
       }
-      shareDoc.create('', 'text');
-
-    } else if (shareDoc.type.name !== 'text') {
-      throw new Error('Cannot attach to a non-text document');
+      var newDoc = {};
+      newDoc[key] = '';
+      shareDoc.create(newDoc);
     }
 
     if (verbose) {
       console.log('ShareDBCodeMirror: Subscribed to doc');
     }
 
-    shareDBCodeMirror.setValue(shareDoc.data || '');
+    shareDBCodeMirror.setValue(shareDoc.data[key] || '');
 
     if (callback) {
       callback(null);
@@ -133,7 +150,35 @@ ShareDBCodeMirror.prototype.getValue = function() {
 };
 
 /**
- * Applies the changes represented by the given ShareDB op. The op may be
+ * Asserts that the value in the CodeMirror instance matches the passed-in value.
+ * If it does not, an error is logged and the value in CodeMirror is reset. This
+ * should be called periodically with the value from the ShareDB doc to ensure
+ * the value in CodeMirror hasn't diverged.
+ *
+ * @return {boolean} true if the passed-in value matches the value in the
+ *    CodeMirror instance, false otherwise.
+ */
+ShareDBCodeMirror.prototype.assertValue = function(expectedValue) {
+  var editorValue = this.codeMirror.getValue();
+
+  if (expectedValue !== editorValue) {
+    console.error(
+      "Value in CodeMirror doesn't match expected value:\n\n",
+      "Expected Value:\n", expectedValue,
+      "\n\nEditor Value:\n", editorValue);
+
+    this._suppressChange = true;
+    this.codeMirror.setValue(expectedValue);
+    this._suppressChange = false;
+
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Applies the changes represented by the given text OT op. The op may be
  * ignored if it appears to be an echo of the most recently submitted local op.
  * In order to do this properly, the second argument, `source`, **must** be passed
  * in. This will be the second argument to an "op" listener on a ShareDB doc.
@@ -212,7 +257,7 @@ ShareDBCodeMirror.prototype._handleChange = function(codeMirror, change) {
   var op = this._createOpFromChange(change);
 
   if (this.verbose) {
-    console.log('ShareDBCodeMirror: submitting op', op);
+    console.log('ShareDBCodeMirror: produced op', op);
   }
 
   this.onOp(op, CODE_MIRROR_OP_SOURCE);
@@ -230,7 +275,9 @@ ShareDBCodeMirror.prototype._createOpFromChange = function(change) {
 
   textIndex += change.from.ch;
 
-  op.push(textIndex); // skip textIndex chars
+  if (textIndex > 0) {
+    op.push(textIndex); // skip textIndex chars
+  }
 
   if (change.to.line !== change.from.line || change.to.ch !== change.from.ch) {
     var delLen = 0;
@@ -247,7 +294,9 @@ ShareDBCodeMirror.prototype._createOpFromChange = function(change) {
 
   if (change.text) {
     var text = change.text.join('\n');
-    op.push(text); // insert text
+    if (text) {
+      op.push(text); // insert text
+    }
   }
 
   return op;

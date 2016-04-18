@@ -5,43 +5,44 @@ describe('MockDoc', function () {
   var doc;
 
   beforeEach(function () {
-    doc = new MockDoc('abcdefg');
+    doc = new MockDoc({content: 'abcdefg'});
   });
 
   it('can be created', function () {
     doc.type = null;
-    doc.create('', 'text');
-    assert.equal('text', doc.type && doc.type.name);
+    doc.create({content: ''});
+    assert.equal('json0', doc.type && doc.type.name);
+    assert.deepEqual({content: ''}, doc.data);
   });
 
   it('can insert at the beginning', function () {
-    doc.submitOp(['123']);
-    assert.equal('123abcdefg', doc.data);
+    doc.submitOp([{p: ['content'], t: 'text', o: ['123']}]);
+    assert.equal('123abcdefg', doc.data.content);
   });
 
   it('can insert in the middle', function () {
-    doc.submitOp([2, '123']);
-    assert.equal('ab123cdefg', doc.data);
+    doc.submitOp([{p: ['content'], t: 'text', o: [2, '123']}]);
+    assert.equal('ab123cdefg', doc.data.content);
   });
 
   it('can insert at the end', function () {
-    doc.submitOp([doc.data.length, '123']);
-    assert.equal('abcdefg123', doc.data);
+    doc.submitOp([{p: ['content'], t: 'text', o: [doc.data.content.length, '123']}]);
+    assert.equal('abcdefg123', doc.data.content);
   });
 
   it('can remove from the beginning', function () {
-    doc.submitOp([{d: 2}]);
-    assert.equal('cdefg', doc.data);
+    doc.submitOp([{p: ['content'], t: 'text', o: [{d: 2}]}]);
+    assert.equal('cdefg', doc.data.content);
   });
 
   it('can remove from the middle', function () {
-    doc.submitOp([2, {d: 3}]);
-    assert.equal('abfg', doc.data);
+    doc.submitOp([{p: ['content'], t: 'text', o: [2, {d: 3}]}]);
+    assert.equal('abfg', doc.data.content);
   });
 
   it('can remove from the end', function () {
-    doc.submitOp([doc.data.length - 2, {d: 2}]);
-    assert.equal('abcde', doc.data);
+    doc.submitOp([{p: ['content'], t: 'text', o: [doc.data.content.length - 2, {d: 2}]}]);
+    assert.equal('abcde', doc.data.content);
   });
 
   it('can error out subscribe', function (done) {

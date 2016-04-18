@@ -7,7 +7,7 @@ var ShareDB = require('sharedb');
 var WebSocketServer = require('ws').Server;
 var otText = require('ot-text');
 
-ShareDB.types.register(otText.type);
+ShareDB.types.map['json0'].registerSubtype(otText.type);
 
 var shareDB = ShareDB();
 

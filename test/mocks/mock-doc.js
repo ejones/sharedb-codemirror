@@ -23,7 +23,7 @@ MockDoc.prototype.create = function(data, type, source, callback) {
     throw new Error('Document already exists');
   }
   this.data = data;
-  this.type = {name: type};
+  this.type = {name: type || 'json0'};
 };
 
 MockDoc.prototype.submitOp = function(op, source, callback) {
@@ -38,26 +38,33 @@ MockDoc.prototype.submitOp = function(op, source, callback) {
 };
 
 MockDoc.prototype._applyOp = function(op) {
-  var codeMirror = this.codeMirror;
-  var text = this.data;
-  var index = 0;
+  var doc = this;
 
-  op.forEach(function(part) {
-    switch (typeof part) {
-      case 'number': // skip n chars
-        index += part;
-        break;
-      case 'string': // "chars" - insert "chars"
-        text = text.slice(0, index) + part + text.slice(index);
-        index += part.length;
-        break;
-      case 'object': // {d: num} - delete `num` chars
-        text = text.slice(0, index) + text.slice(index + part.d);
-        break;
+  op.forEach(function(opPart) {
+    if (!(opPart.p && opPart.p.length === 1 && opPart.t === 'text')) {
+      throw new Error("MockDoc only supports ops that are text OT on a path of length one");
     }
-  });
 
-  this.data = text;
+    var text = doc.data[opPart.p[0]];
+    var index = 0;
+
+    opPart.o.forEach(function(textOpPart) {
+      switch (typeof textOpPart) {
+        case 'number': // skip n chars
+          index += textOpPart;
+          break;
+        case 'string': // "chars" - insert "chars"
+          text = text.slice(0, index) + textOpPart + text.slice(index);
+          index += textOpPart.length;
+          break;
+        case 'object': // {d: num} - delete `num` chars
+          text = text.slice(0, index) + text.slice(index + textOpPart.d);
+          break;
+      }
+    });
+
+    doc.data[opPart.p[0]] = text;
+  });
 };
 
 MockDoc.prototype.receiveRemoteOp = function(op) {
