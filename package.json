@@ -1,12 +1,12 @@
 {
   "name": "sharedb-codemirror",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "CodeMirror bindings for ShareDB",
   "main": "sharedb-codemirror.js",
   "scripts": {
     "test": "node_modules/.bin/mocha",
     "test-cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha",
-    "start": "cd examples && ../node_modules/.bin/webpack && node server.js"
+    "start": "cd examples && \"../node_modules/.bin/webpack\" && node server.js"
   },
   "repository": {
     "type": "git",
