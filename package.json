@@ -5,7 +5,7 @@
   "main": "sharedb-codemirror.js",
   "scripts": {
     "test": "node_modules/.bin/mocha",
-    "test-cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha",
+    "test-cover": "node_modules/.bin/istanbul cover node_modules/mocha/bin/_mocha",
     "start": "cd examples && \"../node_modules/.bin/webpack\" && node server.js"
   },
   "repository": {
