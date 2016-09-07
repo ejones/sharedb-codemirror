@@ -21,6 +21,9 @@ window.HTMLElement.prototype.createTextRange = function () {
     },
     getBoundingClientRect: function () {
       return {};
-    }
+    },
+    getClientRects: function () {
+      return [];
+    },
   };
 };
