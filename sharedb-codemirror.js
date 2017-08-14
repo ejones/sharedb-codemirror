@@ -199,7 +199,7 @@ ShareDBCodeMirror.prototype.applyOp = function(op, source) {
     return;
   }
 
-  if (source === CODE_MIRROR_OP_SOURCE) {
+  if (source === true || source === CODE_MIRROR_OP_SOURCE) {
     if (this.verbose) {
       console.log('ShareDBCodeMirror: skipping local op', op);
     }
