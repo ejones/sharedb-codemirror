@@ -54,7 +54,7 @@ ShareDBCodeMirror.attachDocToCodeMirror = function(shareDoc, codeMirror, options
       shareDoc.on('op', shareDBOpListener);
     },
     onStop: function() {
-      shareDoc.removeListener('op', shareDBOpListener);
+      shareDoc.destroy();
     },
     onOp: function(op, source) {
       var docOp = [{p: [key], t: 'text', o: op}];
