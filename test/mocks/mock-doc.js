@@ -26,15 +26,16 @@ MockDoc.prototype.create = function(data, type, source, callback) {
   this.type = {name: type || 'json0'};
 };
 
-MockDoc.prototype.submitOp = function(op, source, callback) {
-  if (typeof source === 'function' || callback) {
-    throw new Error('MockDoc does not support an op callback');
-  }
-  if (!this.type) {
-    throw new Error("Document hasn't been created yet");
-  }
-  this._applyOp(op);
-  this._opListeners.forEach(function (f) { f(op, source); });
+MockDoc.prototype.submitOp = function(component, options, callback) {
+    if (typeof options === 'function' || callback) {
+        throw new Error('MockDoc does not support an op callback');
+    }
+    if (!this.type) {
+        throw new Error("Document hasn't been created yet");
+    }
+
+    this._applyOp(component);
+    this._opListeners.forEach(function (f) { f({op: component}, options); });
 };
 
 MockDoc.prototype._applyOp = function(op) {

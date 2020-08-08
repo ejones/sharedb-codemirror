@@ -1,10 +1,8 @@
-var CODE_MIRROR_OP_SOURCE = 'CodeMirror';
-
 /**
  * @constructor
  * @param {CodeMirror} codeMirror - a CodeMirror editor instance
  * @param {Object} options - required. Options object with the following keys:
- *    - onOp(op, source): required. a function to call when a text OT op is
+ *    - onOp(op): required. a function to call when a text OT op is
  *      produced by the editor. Note the second argument, `source`, which **must**
  *      be passed through to the ShareDB doc.
  *    - onStart(): optional. will be called when ShareDBCodeMirror starts listening
@@ -56,14 +54,14 @@ ShareDBCodeMirror.attachDocToCodeMirror = function(shareDoc, codeMirror, options
     onStop: function() {
       shareDoc.removeListener('op', shareDBOpListener);
     },
-    onOp: function(op, source) {
+    onOp: function(op) {
       var docOp = [{p: [key], t: 'text', o: op}];
 
       if (verbose) {
         console.log('ShareDBCodeMirror: submitting op to doc:', docOp);
       }
 
-      shareDoc.submitOp(docOp, source);
+      shareDoc.submitOp(docOp, {source: this});
       shareDBCodeMirror.assertValue(shareDoc.data[key]);
     }
   });
@@ -199,7 +197,7 @@ ShareDBCodeMirror.prototype.applyOp = function(op, source) {
     return;
   }
 
-  if (source === CODE_MIRROR_OP_SOURCE) {
+  if (source === this) {
     if (this.verbose) {
       console.log('ShareDBCodeMirror: skipping local op', op);
     }
@@ -260,7 +258,7 @@ ShareDBCodeMirror.prototype._handleChange = function(codeMirror, change) {
     console.log('ShareDBCodeMirror: produced op', op);
   }
 
-  this.onOp(op, CODE_MIRROR_OP_SOURCE);
+  this.onOp(op);
 };
 
 ShareDBCodeMirror.prototype._createOpFromChange = function(change) {
