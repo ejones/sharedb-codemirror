@@ -81,21 +81,21 @@ describe('ShareJS changes', function () {
 
   it('adds text', function () {
     var text = "aaaa\nbbbb\ncccc\ndddd";
-    doc.submitOp([{p: ['content'], t: 'text', o: [text]}], false);
+    doc.submitOp([{p: ['content'], t: 'text', o: [text]}]);
     assert.equal(text, codeMirror.getValue());
   });
 
   it('can edit a doc that has been empty', function () {
-    doc.submitOp([{p: ['content'], t: 'text', o: ['']}], false);
+    doc.submitOp([{p: ['content'], t: 'text', o: ['']}]);
     assert.equal('', codeMirror.getValue());
 
-    doc.submitOp([{p: ['content'], t: 'text', o: ['a']}], false);
+    doc.submitOp([{p: ['content'], t: 'text', o: ['a']}]);
     assert.equal('a', codeMirror.getValue());
   });
 
   it('resets when the CodeMirror value and editor value diverge', function () {
     doc.data = {content: 'foo'};
-    doc.submitOp([{p: ['content'], t: 'text', o: ['bar']}], false);
+    doc.submitOp([{p: ['content'], t: 'text', o: ['bar']}]);
 
     assert.equal('barfoo', codeMirror.getValue());
   });
@@ -107,7 +107,7 @@ describe('ShareJS changes', function () {
     });
 
     it('replaces a line', function () {
-      doc.submitOp([{p: ['content'], t: 'text', o: [{d: 2}, 'hello']}], false);
+      doc.submitOp([{p: ['content'], t: 'text', o: [{d: 2}, 'hello']}]);
       assert.equal('hello', codeMirror.getValue());
     });
   });
@@ -119,7 +119,7 @@ describe('ShareJS changes', function () {
     });
 
     it('replaces a couple of lines', function () {
-      doc.submitOp([{p: ['content'], t: 'text', o: [6, {d: 11}, 'evil\nrats\n']}], false);
+      doc.submitOp([{p: ['content'], t: 'text', o: [6, {d: 11}, 'evil\nrats\n']}]);
       assert.equal('three\nevil\nrats\nsee\nhow\nthey\nrun\n', codeMirror.getValue());
     });
   });
@@ -152,7 +152,7 @@ describe('ShareDBCodeMirror', function() {
     });
 
     it('ignores incoming ops', function () {
-      doc.submitOp([{p: ['content'], t: 'text', o: [doc.data.length, ' more stuff']}], false);
+      doc.submitOp([{p: ['content'], t: 'text', o: [doc.data.length, ' more stuff']}]);
       assert.equal('stuff', codeMirror.getValue());
     });
   });

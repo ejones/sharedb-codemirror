@@ -3,8 +3,10 @@
  * @param {CodeMirror} codeMirror - a CodeMirror editor instance
  * @param {Object} options - required. Options object with the following keys:
  *    - onOp(op): required. a function to call when a text OT op is
- *      produced by the editor. Note the second argument, `source`, which **must**
- *      be passed through to the ShareDB doc.
+ *      produced by the editor. Typically will call `submitOp` on the ShareDB
+ *      doc. When doing so, note that it's important to pass `{source: this}`
+ *      as the second argument to `submitOp` so that `ShareDBCodeMirror` can
+ *      identify its own ops when rebroadcasted.
  *    - onStart(): optional. will be called when ShareDBCodeMirror starts listening
  *      (i.e., when `.start()` or `.setValue()` is called)
  *    - onStop(): optional. will be called when ShareDBCodeMirror stops listening
@@ -71,7 +73,7 @@ ShareDBCodeMirror.attachDocToCodeMirror = function(shareDoc, codeMirror, options
       var opPart = op[i];
 
       if (opPart.p && opPart.p.length === 1 && opPart.p[0] === key && opPart.t === 'text') {
-        shareDBCodeMirror.applyOp(opPart.o, source);
+        shareDBCodeMirror.applyOp(opPart.o, source === undefined ? null : source);
 
       } else if (verbose) {
         console.log('ShareDBCodeMirror: ignoring op because of path or type:', opPart);

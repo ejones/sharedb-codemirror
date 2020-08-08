@@ -15,9 +15,9 @@ MockDoc.prototype.subscribe = function(callback) {
   });
 };
 
-MockDoc.prototype.create = function(data, type, source, callback) {
-  if (typeof type === 'function' || source || callback) {
-    throw new Error('MockDoc does not support the "source" and "callback" arguments');
+MockDoc.prototype.create = function(data, type, options, callback) {
+  if (typeof type === 'function' || options || callback) {
+    throw new Error('MockDoc does not support the "options" and "callback" arguments');
   }
   if (this.type) {
     throw new Error('Document already exists');
@@ -35,7 +35,7 @@ MockDoc.prototype.submitOp = function(component, options, callback) {
     }
 
     this._applyOp(component);
-    this._opListeners.forEach(function (f) { f({op: component}, options); });
+    this._opListeners.forEach(function (f) { f(component, options && options.source); });
 };
 
 MockDoc.prototype._applyOp = function(op) {
@@ -66,10 +66,6 @@ MockDoc.prototype._applyOp = function(op) {
 
     doc.data[opPart.p[0]] = text;
   });
-};
-
-MockDoc.prototype.receiveRemoteOp = function(op) {
-  this._opListeners.forEach(function (f) { f(op, false); });
 };
 
 MockDoc.prototype.on = function(event, listener) {
